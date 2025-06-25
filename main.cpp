@@ -25,7 +25,7 @@ void DrawWinda(Graphics& g)
     SolidBrush textBrush(Color(0, 0, 0));
 
     int baseX = 50; // winda z lewej
-    int baseY = 400; // piêtro 0
+    int baseY = 400; // piï¿½tro 0
     int floorHeight = 60;
     int width = 50;
     int height = 50;
@@ -34,11 +34,11 @@ void DrawWinda(Graphics& g)
     wstring wagaStr = L"Waga: " + to_wstring(winda.waga) + L" kg";
     g.DrawString(wagaStr.c_str(), -1, &font, PointF(10, 10), &textBrush);
 
-    // Rysuj windê
+    // Rysuj windï¿½
     int wy = baseY - ((winda.pietro + 1) * floorHeight);
     g.FillRectangle(&windaBrush, baseX, wy, width, height);
 
-    // Pasa¿erowie w windzie
+    // Pasaï¿½erowie w windzie
     int i = 0;
     for (int idx : winda.vectorPasazerow) {
         const Pasazer& p = *pasazerowie[idx];
@@ -48,7 +48,7 @@ void DrawWinda(Graphics& g)
         i++;
     }
 
-    // Piêtra i pasa¿erowie czekaj¹cy
+    // Piï¿½tra i pasaï¿½erowie czekajï¿½cy
     Pen pen(Color(0, 0, 0));
     int panelX = baseX + 100; // po prawej od windy
     int personSize = 8;
@@ -56,14 +56,14 @@ void DrawWinda(Graphics& g)
     for (int f = 0; f < 5; ++f) {
         int fy = baseY - f * floorHeight;
 
-        // piêtro linia
+        // piï¿½tro linia
         g.DrawLine(&pen, baseX, fy, panelX + 160, fy);
 
-        // tekst piêtra
+        // tekst piï¿½tra
         wstring pietroText = L"Pietro " + to_wstring(f);
         g.DrawString(pietroText.c_str(), -1, &font, PointF(panelX, fy - 15), &textBrush);
 
-        // pasa¿erowie czekaj¹cy
+        // pasaï¿½erowie czekajï¿½cy
         int count = 0;
         for (const auto& ptr : pasazerowie) {
             const Pasazer& p = *ptr;
@@ -90,7 +90,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         for (int floor = 0; floor < 5; ++floor) {
             for (int cel = 0; cel < 5; ++cel) {
 
-                std::wcout << L"Tworzê przycisk: z " << floor << L" do " << cel
+                std::wcout << L"Tworze przycisk: z " << floor << L" do " << cel
                     << L", btnId=" << (BUTTON_ID_BASE + floor * 10 + cel) << std::endl;
 
 
@@ -115,7 +115,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             int floor = (btnId - BUTTON_ID_BASE) / 10;
             int cel = (btnId - BUTTON_ID_BASE) % 10;
 
-            // Zabezpieczenie: nie dodawaj identycznego pasa¿era
+            // Zabezpieczenie: nie dodawaj identycznego pasaï¿½era
             bool juzIstnieje = false;
             for (const auto& ptr : pasazerowie) {
                 const Pasazer& p = *ptr;
@@ -131,7 +131,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 std::cout << "[DODANO] Pasazer: start=" << floor << ", cel=" << cel << std::endl;
             }
             else {
-                std::cout << "[POMINIÊTO] Duplikat pasazera: start=" << floor << ", cel=" << cel << std::endl;
+                std::cout << "[POMINIETO] Duplikat pasazera: start=" << floor << ", cel=" << cel << std::endl;
             }
 
             InvalidateRect(hWnd, NULL, FALSE);
@@ -147,7 +147,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         winda.ruch();
         winda.odstaw();
-        winda.pierwszyRuchJeœliPotrzeba();
+        winda.pierwszyRuchJesliPotrzeba();
         InvalidateRect(hWnd, NULL, FALSE);
         return 0;
 

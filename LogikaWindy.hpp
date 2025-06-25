@@ -44,6 +44,6 @@ public:
 	void odbierz(Pasazer& pasazer, int index);
 	void odstaw();
 	void ruchPierwszaKolej();
-	void pierwszyRuchJeśliPotrzeba();
+	void pierwszyRuchJesliPotrzeba();
 	void ruch();
 };

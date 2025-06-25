@@ -151,7 +151,7 @@ public:
     }
 
     //test
-    void pierwszyRuchJeśliPotrzeba() {
+    void pierwszyRuchJesliPotrzeba() {
         if (kierunek == stop) {
             if (!kolejkaGora.empty()) {
                 pierwszaKolej = *kolejkaGora.begin();
