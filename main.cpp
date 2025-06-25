@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 #include "logikaWindy.cpp"
+#include <fcntl.h>
+#include <io.h>
+
 #pragma comment(lib, "gdiplus.lib")
 
 using namespace Gdiplus;
@@ -12,8 +15,7 @@ using namespace std;
 #define BUTTON_ID_BASE 1000
 
 Winda winda;
-vector<unique_ptr<Pasazer>> pasazerowie;
-
+vector<Pasazer> pasazerowie;
 
 void DrawWinda(Graphics& g)
 {
@@ -25,7 +27,7 @@ void DrawWinda(Graphics& g)
     SolidBrush textBrush(Color(0, 0, 0));
 
     int baseX = 50; // winda z lewej
-    int baseY = 400; // pi�tro 0
+    int baseY = 400; // piętro 0
     int floorHeight = 60;
     int width = 50;
     int height = 50;
@@ -34,21 +36,20 @@ void DrawWinda(Graphics& g)
     wstring wagaStr = L"Waga: " + to_wstring(winda.waga) + L" kg";
     g.DrawString(wagaStr.c_str(), -1, &font, PointF(10, 10), &textBrush);
 
-    // Rysuj wind�
+    // Rysuj windę
     int wy = baseY - ((winda.pietro + 1) * floorHeight);
     g.FillRectangle(&windaBrush, baseX, wy, width, height);
 
-    // Pasa�erowie w windzie
+    // Pasażerowie w windzie
     int i = 0;
-    for (int idx : winda.vectorPasazerow) {
-        const Pasazer& p = *pasazerowie[idx];
-        int py = wy + 5 + (i / 4) * 10;
+    for (auto* p : winda.vectorPasazerow) {
         int px = baseX + 5 + (i % 4) * 10;
+        int py = wy + 5 + (i / 4) * 10;
         g.FillRectangle(&pasazerBrush, px, py, 8, 8);
         i++;
     }
 
-    // Pi�tra i pasa�erowie czekaj�cy
+    // Piętra i pasażerowie czekający
     Pen pen(Color(0, 0, 0));
     int panelX = baseX + 100; // po prawej od windy
     int personSize = 8;
@@ -56,17 +57,16 @@ void DrawWinda(Graphics& g)
     for (int f = 0; f < 5; ++f) {
         int fy = baseY - f * floorHeight;
 
-        // pi�tro linia
+        // piętro linia
         g.DrawLine(&pen, baseX, fy, panelX + 160, fy);
 
-        // tekst pi�tra
+        // tekst piętra
         wstring pietroText = L"Pietro " + to_wstring(f);
         g.DrawString(pietroText.c_str(), -1, &font, PointF(panelX, fy - 15), &textBrush);
 
-        // pasa�erowie czekaj�cy
+        // pasażerowie czekający
         int count = 0;
-        for (const auto& ptr : pasazerowie) {
-            const Pasazer& p = *ptr;
+        for (const Pasazer& p : pasazerowie) {
             if (p.stan == czeka && p.pietroStart == f) {
                 int px = panelX + (count % 4) * (personSize + 2);
                 int py = fy - height + (count / 4) * (personSize + 2);
@@ -74,7 +74,6 @@ void DrawWinda(Graphics& g)
                 count++;
             }
         }
-
     }
 }
 
@@ -89,11 +88,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         for (int floor = 0; floor < 5; ++floor) {
             for (int cel = 0; cel < 5; ++cel) {
-
-                std::wcout << L"Tworze przycisk: z " << floor << L" do " << cel
-                    << L", btnId=" << (BUTTON_ID_BASE + floor * 10 + cel) << std::endl;
-
-
                 if (cel == floor) continue;
                 wchar_t label[16];
                 swprintf(label, 16, L"Do %d", cel);
@@ -114,40 +108,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (btnId >= BUTTON_ID_BASE && btnId < BUTTON_ID_BASE + 500) {
             int floor = (btnId - BUTTON_ID_BASE) / 10;
             int cel = (btnId - BUTTON_ID_BASE) % 10;
-
-            // Zabezpieczenie: nie dodawaj identycznego pasa�era
-            bool juzIstnieje = false;
-            for (const auto& ptr : pasazerowie) {
-                const Pasazer& p = *ptr;
-                if (p.pietroStart == floor && p.pietroKoniec == cel && p.stan != dojechal) {
-                    juzIstnieje = true;
-                    break;
-                }
-            }
-
-
-            if (!juzIstnieje) {
-                pasazerowie.push_back(make_unique<Pasazer>(floor, cel));
-                std::cout << "[DODANO] Pasazer: start=" << floor << ", cel=" << cel << std::endl;
-            }
-            else {
-                std::cout << "[POMINIETO] Duplikat pasazera: start=" << floor << ", cel=" << cel << std::endl;
-            }
-
+            pasazerowie.push_back(Pasazer(floor, cel));
             InvalidateRect(hWnd, NULL, FALSE);
         }
         return 0;
     }
 
-
     case WM_TIMER:
-        for (auto& p : pasazerowie) winda.wezwij(*p);
-        for (size_t i = 0; i < pasazerowie.size(); ++i)
-            winda.odbierz(*pasazerowie[i], static_cast<int>(i));
-
+        for (Pasazer& p : pasazerowie) winda.wezwij(p);
+        for (Pasazer& p : pasazerowie) winda.odbierz(p);
         winda.ruch();
         winda.odstaw();
-        winda.pierwszyRuchJesliPotrzeba();
+        winda.pierwszyRuchJeśliPotrzeba();
         InvalidateRect(hWnd, NULL, FALSE);
         return 0;
 
@@ -182,15 +154,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     ULONG_PTR gdiplusToken;
     GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+    SetConsoleOutputCP(CP_UTF8);  // jeśli chcesz obsługę znaków UTF-8
+
+
     WNDCLASS wc = {};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = L"SymulacjaWindy";
-
-    AllocConsole();
-    FILE* f;
-    freopen_s(&f, "CONOUT$", "w", stdout);
-    freopen_s(&f, "CONOUT$", "w", stderr);
 
     RegisterClass(&wc);
     HWND hWnd = CreateWindowEx(0, L"SymulacjaWindy", L"Symulator Windy", WS_OVERLAPPEDWINDOW,
