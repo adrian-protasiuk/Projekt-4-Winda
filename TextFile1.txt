@@ -1,0 +1,244 @@
+#include <iostream>
+#include<set>
+#include<vector>
+#include<list>
+using namespace std;
+
+enum Kierunek
+{
+    dol,stop,gora
+};
+
+enum Stan
+{
+    spawn, czeka, jedzie, dojechal
+};
+
+class Pasazer {
+public:
+    int pietroStart;
+    int pietroKoniec;
+    Kierunek kierunek;
+    Stan stan;
+    Pasazer(int pStart, int pKoniec) :pietroStart(pStart), pietroKoniec(pKoniec), stan(spawn) {
+        kierunek = (pStart < pKoniec) ? gora : dol;
+    }
+};
+
+
+class Winda {
+public:
+    int pietro;
+    Kierunek kierunek;
+    list<Pasazer*> listaPasazerow;
+    int liczbaPasazerow;
+    int waga;
+    //mozliwa poprawka wagi
+    int pierwszaKolej;
+    set<int> kolejkaGora;
+    set<int, greater<int>> kolejkaDol;
+    set<int> celeGora;
+    set<int, greater<int>> celeDol;
+    
+
+    Winda() :pierwszaKolej(0), pietro(0), kierunek(stop), liczbaPasazerow(0) {
+        waga = liczbaPasazerow * 70;
+    }
+
+    void aktualizacjaWagi() {
+        liczbaPasazerow = listaPasazerow.size();
+        waga = liczbaPasazerow * 70;
+    }
+
+    void wezwij(Pasazer& pasazer) {
+        if (pasazer.stan == spawn) {
+            //if (kierunek == stop) {
+              //  pierwszaKolej = pasazer.pietroStart;
+                //ruch pierwsza kolej
+                //ruch na pietroStart
+                // i potem ustawienie kierunku??
+                //ruchPierwszaKolej();
+               // kierunek = pasazer.kierunek;
+                // 
+                //odbierz pasazera
+                //standard ruch
+                //potem standard
+                //wezwij(pasazer);
+            //}
+            //else
+            if (pasazer.kierunek == gora) {
+                kolejkaGora.insert(pasazer.pietroStart);
+                pasazer.stan = czeka;
+            }
+            else if (pasazer.kierunek == dol) {
+                kolejkaDol.insert(pasazer.pietroStart);
+                pasazer.stan = czeka;
+            }
+        }
+
+    }
+
+
+
+
+    //odnbieramy tylko jak vector.size()<8
+    void odbierz(Pasazer& pasazer) {
+        if (listaPasazerow.size() >= 8) return;
+        if (pietro == pasazer.pietroStart && pasazer.stan == czeka &&
+            (kierunek == pasazer.kierunek || kierunek == stop)) {
+            //winda open animacja
+            pasazer.stan = jedzie;
+            listaPasazerow.push_back(&pasazer);
+        if (pasazer.kierunek == gora) {
+            kolejkaGora.erase(pasazer.pietroStart);
+        }
+        if (pasazer.kierunek == dol) {
+            kolejkaDol.erase(pasazer.pietroStart);
+        }
+        if (pasazer.kierunek == gora)
+            celeGora.insert(pasazer.pietroKoniec);
+        else
+            celeDol.insert(pasazer.pietroKoniec);
+
+            aktualizacjaWagi();
+            //animacja pasazer idzie do pola okreslonego indeksem wektora
+            //zamykamy winde
+            return;
+        }
+    }
+
+    void odstaw() {
+        for (auto it = listaPasazerow.begin(); it != listaPasazerow.end(); ) {
+            if ((*it)->pietroKoniec == pietro ) {
+                //cout << "[ODSTAW] Pasa¿er wysiada na pietrze " << pietro << endl;
+                (*it)->stan = dojechal;
+                it = listaPasazerow.erase(it);
+                //animacja it
+            }
+            else {
+                ++it;
+            }
+        }
+        celeGora.erase(pietro);
+        celeDol.erase(pietro);
+        aktualizacjaWagi();
+    }
+
+    void ruchPierwszaKolej() {
+        //animacja ruchu od do
+        //pietro = pierwszaKolej;
+        if (pierwszaKolej == pietro) return;
+        pietro < pierwszaKolej ? pietro++: pietro--;
+    }
+
+    //test
+    void pierwszyRuchJeœliPotrzeba() {
+        if (kierunek == stop) {
+            if (!kolejkaGora.empty()) {
+                pierwszaKolej = *kolejkaGora.begin();
+                kierunek = gora;
+                ruchPierwszaKolej();
+            }
+            else if (!kolejkaDol.empty()) {
+                pierwszaKolej = *kolejkaDol.begin();
+                kierunek = dol;
+                ruchPierwszaKolej();
+            }
+            else if (listaPasazerow.empty() && pietro != 0) {
+                kierunek = dol;
+                pietro--; // powrót na parter
+            }
+        }
+    }
+
+    void ruch() {
+        
+
+        if (kierunek == gora) {
+            for (int i = pietro + 1; i < 5; i++) {
+                if (celeGora.count(i) || kolejkaGora.count(i)) {
+                    pietro++;
+                    return;
+                }
+            }
+        }
+
+        if (kierunek == dol) {
+            for (int i = pietro - 1; i >= 0; i--) {
+                if (celeDol.count(i) || kolejkaDol.count(i)) {
+                    pietro--;
+                    return;
+                }
+            }
+        }
+
+        // Nie ma nic wiêcej do zrobienia
+        kierunek = stop;
+    }
+
+};
+
+
+   
+    int main()
+    {
+        Winda winda;
+        vector<Pasazer> pasazerowie;
+
+        //Dodanie kilku testowych pasa¿erów
+        pasazerowie.push_back(Pasazer(0, 3)); // Jedzie w górê
+        pasazerowie.push_back(Pasazer(2, 1)); // Jedzie w dó³
+        pasazerowie.push_back(Pasazer(1, 4)); // Jedzie w górê
+
+        for (int krok = 0; krok < 20; krok++){
+            //test
+            cout << "\n--- Krok " << krok << " ---" << endl;
+            cout << "Winda na pietrze: " << winda.pietro << ", Kierunek: "
+                << (winda.kierunek == gora ? "GORA" :
+                    winda.kierunek == dol ? "DOL" : "STOP") << endl;
+            cout << "Liczba pasazerow w windzie: " << winda.listaPasazerow.size() << endl;
+            //---------
+            if (krok % 2 == 0) {
+                int start = rand() % 5;
+                int cel;
+                do {
+                    cel = rand() % 5;
+                } while (cel == start); // ¿eby nie jecha³ na to samo piêtro
+
+                pasazerowie.push_back(Pasazer(start, cel));
+                cout << "[AUTO] Dodano pasa¿era: start=" << start << ", cel=" << cel << endl;
+            }
+
+
+            for (Pasazer& p : pasazerowie) {
+                winda.wezwij(p);
+            }
+            winda.pierwszyRuchJeœliPotrzeba();
+            for (Pasazer& p : pasazerowie) {
+                winda.odbierz(p);
+            }
+            
+            winda.odstaw();
+
+            winda.ruch();
+            
+            
+            
+
+            //test
+            for (size_t i = 0; i < pasazerowie.size(); i++) {
+                Pasazer& p = pasazerowie[i];
+                cout << "Pasazer " << i
+                    << ": start=" << p.pietroStart
+                    << ", cel=" << p.pietroKoniec
+                    << ", stan=" <<
+                    (p.stan == spawn ? "SPAWN" :
+                        p.stan == czeka ? "CZEKA" :
+                        p.stan == jedzie ? "JEDZIE" : "DOJECHAL")
+                    << endl;
+            }
+            //----------
+        }
+       
+
+    }
